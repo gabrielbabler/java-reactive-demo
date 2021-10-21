@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 
@@ -30,7 +31,22 @@ class PersonRepositoryImplTest {
 
     @Test
     void getByIdSubscribe() {
-        Mono<Person> personMono = personRepository.getById(1);
+        Mono<Person> personMono = personRepository.getById(2);
+
+        StepVerifier.create(personMono)
+                .expectNextCount(1)
+                .verifyComplete();
+
+        personMono.subscribe(person -> {
+            System.out.println(person.toString());
+        });
+    }
+
+    @Test
+    void getByIdSubscribeNotfound() {
+        Mono<Person> personMono = personRepository.getById(9);
+
+        StepVerifier.create(personMono).expectNextCount(0).verifyComplete();
 
         personMono.subscribe(person -> {
             System.out.println(person.toString());
@@ -51,7 +67,7 @@ class PersonRepositoryImplTest {
     }
 
     @Test
-    void fluxTestBlockFirst() {
+    void testFluxBlockFirst() {
         Flux<Person> personFlux = personRepository.findAll();
 
         Person person = personFlux.blockFirst();
@@ -60,8 +76,10 @@ class PersonRepositoryImplTest {
     }
 
     @Test
-    void fluxTestSubscribe() {
+    void testFluxSubscribe() {
         Flux<Person> personFlux = personRepository.findAll();
+
+        StepVerifier.create(personFlux).expectNextCount(4).verifyComplete();
 
         personFlux.subscribe(person -> {
             System.out.println(person.toString());
@@ -69,15 +87,15 @@ class PersonRepositoryImplTest {
     }
 
     @Test
-    void fluxTestToListMono() {
+    void testFluxToListMono() {
         Flux<Person> personFlux = personRepository.findAll();
 
         Mono<List<Person>> personListMono = personFlux.collectList();
 
         personListMono.subscribe(list -> {
-           list.forEach(person -> {
-               System.out.println(person.toString());
-           });
+            list.forEach(person -> {
+                System.out.println(person.toString());
+            });
         });
     }
 
@@ -122,11 +140,11 @@ class PersonRepositoryImplTest {
                 .single();
 
         personMono.doOnError(throwable -> {
-            System.out.println("I went boom");
-        }).onErrorReturn(new Person())
+                    System.out.println("I went boom");
+                }).onErrorReturn(new Person())
                 .subscribe(person -> {
-            System.out.println(person.toString());
-        });
+                    System.out.println(person.toString());
+                });
     }
 }
 
